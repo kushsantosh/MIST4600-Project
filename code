@@ -1,1 +1,297 @@
+import java.util.ArrayList;
 
+public class Customer {
+
+	private String customerID;
+    private String name;
+    private String contactDetails;
+    private ArrayList<Product> cart;
+
+    public Customer(String customerID, String name, String contactDetails) {
+        this.customerID = customerID;
+        this.name = name;
+        this.contactDetails = contactDetails;
+        this.cart = new ArrayList<>();
+    }
+
+    public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getContactDetails() {
+		return contactDetails;
+	}
+
+	public void setContactDetails(String contactDetails) {
+		this.contactDetails = contactDetails;
+	}
+
+	public void setCustomerID(String customerID) {
+		this.customerID = customerID;
+	}
+
+	public void setCart(ArrayList<Product> cart) {
+		this.cart = cart;
+	}
+
+    public String getCustomerID() {
+        return customerID;
+    }
+
+    public void addToCart(Product product) {
+        cart.add(product);
+    }
+
+    public ArrayList<Product> getCart() {
+        return cart;
+    }
+
+    public void checkout(Shop shop) {
+        Order order = new Order(this, cart);
+        shop.placeOrder(order);
+        cart.clear();
+    }
+}
+
+
+public class Product {
+    private String productID;
+    private String name;
+    private double price;
+    private String category;
+    private int stockLevel;
+
+    public Product(String productID, String name, double price, String category, int stockLevel) {
+        this.productID = productID;
+        this.name = name;
+        this.price = price;
+        this.category = category;
+        this.stockLevel = stockLevel;
+    }
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getProductID() {
+        return productID;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public int getStockLevel() {
+        return stockLevel;
+    }
+
+    public void updateStock(int quantity) {
+        this.stockLevel += quantity;
+    }
+
+    public boolean isInStock() {
+        return stockLevel > 0;
+    }
+}
+
+
+import java.util.ArrayList;
+
+public class Order {
+    private static int orderCounter = 1;
+    private String orderID;
+    private Customer customer;
+    private ArrayList<Product> productList;
+    private double totalCost;
+
+    public Order(Customer customer, ArrayList<Product> productList) {
+        this.orderID = "ORD" + orderCounter++;
+        this.customer = customer;
+        this.productList = new ArrayList<>(productList);
+        calculateTotal();
+    }
+
+	public static int getOrderCounter() {
+		return orderCounter;
+	}
+
+	public static void setOrderCounter(int orderCounter) {
+		Order.orderCounter = orderCounter;
+	}
+
+	public Customer getCustomer() {
+		return customer;
+	}
+
+	public void setCustomer(Customer customer) {
+		this.customer = customer;
+	}
+
+	public void setOrderID(String orderID) {
+		this.orderID = orderID;
+	}
+
+	public void setProductList(ArrayList<Product> productList) {
+		this.productList = productList;
+	}
+
+	public void setTotalCost(double totalCost) {
+		this.totalCost = totalCost;
+	}
+
+	private void calculateTotal() {
+        totalCost = productList.stream().mapToDouble(Product::getPrice).sum();
+    }
+
+    public double getTotalCost() {
+        return totalCost;
+    }
+
+    public String getOrderID() {
+        return orderID;
+    }
+
+    public ArrayList<Product> getProductList() {
+        return productList;
+    }
+}
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class Inventory {
+    private ArrayList<Product> products;
+    private HashMap<String, Integer> stockLevels;
+
+    public Inventory() {
+        this.products = new ArrayList<>();
+        this.stockLevels = new HashMap<>();
+    }
+
+    public void addProduct(Product product) {
+        products.add(product);
+        stockLevels.put(product.getProductID(), product.getStockLevel());
+    }
+
+    public void updateStock(String productID, int quantity) {
+        if (stockLevels.containsKey(productID)) {
+            stockLevels.put(productID, stockLevels.get(productID) + quantity);
+        }
+    }
+
+    public ArrayList<Product> getProducts() {
+        return products;
+    }
+}
+
+import java.util.ArrayList;
+import java.util.HashSet;
+
+public class Shop {
+    private HashSet<String> customerIDs;
+    private ArrayList<Order> orders;
+    protected Inventory inventory;
+
+    public Shop() {
+        this.customerIDs = new HashSet<>();
+        this.orders = new ArrayList<>();
+        this.inventory = new Inventory();
+    }
+
+    public void registerCustomer(Customer customer) {
+        customerIDs.add(customer.getCustomerID());
+    }
+
+    public void placeOrder(Order order) {
+        orders.add(order);
+        for (Product product : order.getProductList()) {
+            inventory.updateStock(product.getProductID(), -1); // Reduces stock by 1 for each item ordered
+        }
+        System.out.println("Order " + order.getOrderID() + " placed successfully!");
+    }
+
+    public void addProductToInventory(Product product) {
+        inventory.addProduct(product);
+    }
+}
+
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Shop shop = new Shop();
+        Scanner scanner = new Scanner(System.in);
+
+        Customer customer1 = new Customer("CUST001", "Jessica Hall", "jh@uga.edu");
+        Customer customer2 = new Customer("CUST002", "Kush Santosh", "ks@uga.edu");
+        Customer customer3 = new Customer("CUST003", "Nick Price", "np@uga.edu");
+        Customer customer4 = new Customer("CUST004", "Shubby Khanna", "sk@uga.edu");
+        Customer customer5 = new Customer("CUST005", "Nikhil Srinivasan", "ns@uga.edu");
+        shop.registerCustomer(customer1);
+        shop.registerCustomer(customer2);
+        shop.registerCustomer(customer3);
+        shop.registerCustomer(customer4);
+        shop.registerCustomer(customer5);
+
+        Product product1 = new Product("PROD001", "UGA x Sitka Hunting Pullover", 40.00, "Clothing", 10);
+        Product product2 = new Product("PROD002", "UGA SEC Baseball Cap", 25.00, "Clothing", 15);
+        Product product3 = new Product("PROD003", "UGA Homecoming T-Shirt", 20.00, "Clothing", 30);
+        Product product4 = new Product("PROD004", "UGA 'Georgia Mom' Coffee Mug", 12.00, "Accessories", 25);
+        Product product5 = new Product("PROD005", "UGA Laptop Sticker Pack", 8.00, "Accessories", 50);
+        Product product6 = new Product("PROD007", "UGA Hydroflask Water Bottle", 18.00, "Accessories", 20);
+        Product product7 = new Product("PROD008", "UGA Retractable Dawg Leash", 15.00, "Pet Accessories", 18);
+        Product product8 = new Product("PROD009", "UGA Red and Black Igloo Cooler", 45.00, "Outdoor", 8);
+        Product product9 = new Product("PROD010", "UGA Lanyard Keychain", 5.00, "Accessories", 40);
+        Product product10 = new Product("PROD011", "UGA Trinket Tray", 22.00, "Home", 14);
+        shop.addProductToInventory(product1);
+        shop.addProductToInventory(product2);
+        shop.addProductToInventory(product3);
+        shop.addProductToInventory(product4);
+        shop.addProductToInventory(product5);
+        shop.addProductToInventory(product6);
+        shop.addProductToInventory(product7);
+        shop.addProductToInventory(product8);
+        shop.addProductToInventory(product9);
+        shop.addProductToInventory(product10);
+
+        while (true) {
+            System.out.println("\nWelcome to the Dawg Shop!");
+            System.out.println("1. View Products");
+            System.out.println("2. Add to Cart");
+            System.out.println("3. Checkout");
+            System.out.println("4. Exit");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    shop.inventory.getProducts().forEach(product -> 
+                        System.out.println(product.getProductID() + ": " + product.getName() + " - $" + product.getPrice())
+                    );
+                    break;
+                case 2:
+                    System.out.print("Enter Product ID to add to cart: ");
+                    String productID = scanner.next();
+                    customer1.addToCart(product1);
+                    System.out.println("Product added to cart.");
+                    System.out.println("To add another product, type 2");
+
+                    break;
+                case 3:
+                    customer1.checkout(shop);
+                    System.out.println("Checkout complete!");
+                    break;
+                case 4:
+                    System.out.println("Thank you for visiting!");
+                    return;
+            }
+        }
+    }
+}
